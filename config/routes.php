@@ -57,6 +57,8 @@ $routes->scope('/', function (RouteBuilder $builder) {
      */
     $builder->connect('/pages/*', 'Pages::display');
 
+    $builder->connect('/api-docs', ['controller' => 'Swagger', 'action' => 'index', 'plugin' => 'SwaggerBake']);
+
     /*
      * Connect catchall routes for all controllers.
      *
