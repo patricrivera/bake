@@ -1,0 +1,35 @@
+version: '2'
+
+services:
+  web:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - ./../:/var/www/html
+      - ./site.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - code-network
+  php:
+    build:
+      context: .
+      dockerfile: php/Dockerfile
+    volumes:
+      - ./../:/var/www/html
+    networks:
+      - code-network
+  db:
+    image: mysql:5.7.22
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_DATABASE=my_app
+      - MYSQL_ROOT_PASSWORD=secret
+      - SERVICE_TAGS=dev
+      - SERVICE_NAME=mysql
+    networks:
+      - code-network
+
+networks:
+  code-network:
+    driver: bridge
