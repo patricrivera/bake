@@ -75,6 +75,21 @@ $routes->scope('/', function (RouteBuilder $builder) {
     $builder->fallbacks();
 });
 
+$routes->scope('/', function (RouteBuilder $routes) {
+    $routes->setExtensions(['json']);
+    $routes->resources('Events', [
+        'only' => ['add'],
+        'map' => [
+            'add' => [
+                'action' => 'add',
+                'method' => 'POST',
+                'path' => '/'
+            ],
+        ]
+    ]);
+//    $routes->resources('Attendees');
+});
+
 /*
  * If you need a different set of middleware or none at all,
  * open new scope and define routes there.

@@ -15,13 +15,22 @@ class CreateEvents extends AbstractMigration
     public function change()
     {
         $table = $this->table('events');
-        $table->addColumn('start', 'datetime', [
+
+        $table->addColumn('eventName', 'string', [
+            'default' => null,
+            'limit' => 255,
+            'null' => false,
+        ]);
+
+        $table->addColumn('duration', 'integer');
+
+        $table->addColumn('startDateTime', 'datetime', [
             'default' => null,
             'null' => false,
         ]);
-        $table->addColumn('end', 'datetime', [
+        $table->addColumn('endDateTime', 'datetime', [
             'default' => null,
-            'null' => false,
+            'null' => true,
         ]);
         $table->addColumn('created', 'datetime', [
             'default' => null,
@@ -29,7 +38,7 @@ class CreateEvents extends AbstractMigration
         ]);
         $table->addColumn('modified', 'datetime', [
             'default' => null,
-            'null' => false,
+            'null' => true,
         ]);
         $table->create();
     }
