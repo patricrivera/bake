@@ -38,7 +38,10 @@
         }
     },
     "scripts": {
-        "initialize": "composer ins && cd docker && docker-compose up -d && ../bin/cake migrations migrate && ../bin/cake migrations seed",
+        "start-server": [
+            "cd docker && docker-compose up -d && cd ../"
+        ],
+        "initialize": "composer ins && bin/cake migrations migrate && bin/cake migrations seed",
         "post-install-cmd": "App\\Console\\Installer::postInstall",
         "post-create-project-cmd": "App\\Console\\Installer::postInstall",
         "check": [
