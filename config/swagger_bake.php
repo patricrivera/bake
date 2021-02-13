@@ -43,7 +43,7 @@
  */
 return [
     'SwaggerBake' => [
-        'prefix' => '/event',
+        'prefix' => '/',
         'yml' => '/config/swagger.yml',
         'json' => '/webroot/swagger.json',
         'webPath' => '/swagger.json',

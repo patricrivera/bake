@@ -1,78 +1,67 @@
 openapi: "3.0.0"
 info:
   version: 1.0.0
-  title: SwaggerBake - A MixerAPI Project
+  title: Events API
   description: |
-    For documentation please review the project [README](https://github.com/cnizzardini/cakephp-swagger-bake) and for
-    other great API related packages checkout [MixerAPI](http://mixerapi.com). To change this text edit your
-    `swagger.yaml` file.
-  license:
-    name: YOUR-LICENSE-HERE
+    EventAPI using cakePHP
 servers:
-  - url: /event
+  - url: /
 paths:
-
-definitions:
-
+  /events:
+    post:
+      tags:
+        - Events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventsResponse'
 components:
   schemas:
-    Exception:
+    Event:
       type: object
       properties:
-        code:
+        eventName:
+          type: string
+          required: true
+          example: event 1
+        duration:
           type: integer
-          example: 500
-        url:
+          required: true
+          example: 30
+        startDateTime:
           type: string
-          example: /url/path
-        message:
+          format: date-time
+          required: true
+          example: 2021-02-13 01:00
+        endDateTime:
           type: string
-          example: Internal Error
-      xml:
-        name: response
-    OperationResult:
-      type: object
-      properties:
-        result:
-          type: boolean
-      xml:
-        name: response
-x-swagger-bake:
-  components:
-    schemas:
-      Generic-Collection:
-        type: object
-        x-data-element: data
-        properties:
-          collection:
-            type: object
-            properties:
-              url:
-                type: string
-                format: url
-                example: /index
-              count:
-                type: integer
-                example: 20
-              total:
-                type: integer
-                example: 200
-              pages:
-                type: integer
-                example: 10
-              next:
-                type: string
-                format: url
-                example: /index?page=:number
-              prev:
-                type: string
-                format: url
-                example: /index?page=:number
-              first:
-                type: string
-                format: url
-                example: /index
-              last:
-                type: string
-                format: url
-                example: /index?page=:number
+          format: date-time
+          example: 2021-02-13 07:00
+        frequency:
+          type: string
+          enum: [Once-Off, Weekly, Monthly]
+          required: true
+        invitees:
+          type: array
+          items:
+            type: integer
+          required: true
+          example: [1,2,3,4]
+    EventsResponse:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: integer
+          required:
+            - id
+        - $ref: '#/components/schemas/Event'
