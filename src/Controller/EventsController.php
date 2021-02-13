@@ -31,17 +31,28 @@ class EventsController extends AppController {
         $this->set(compact('events'));
     }
 
-    /**
-     * View method
-     *
-     * @param string|null $id Event id.
-     * @return \Cake\Http\Response|null|void Renders view
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
-    public function view($id = null) {
-        $events = $this->Events->get($id);
-        $this->set('events', $events);
-        $this->viewBuilder()->setOption('serialize', ['events']);
+    public function view() {
+        try {
+            $data = $this->request->getQuery();
+            // Set the logic for filtering dates
+            $events = $this->Events->find('all', ['conditions' =>
+                [
+                    'startDateTime >=' => new \DateTime($data['start']),
+                    'endDateTime <=' => new \DateTime($data['end'])
+                ]
+            ]);
+
+            // Set the logic for filtering attendees
+            if(isset($data['invitees'])) {
+                // Logic goes here
+            }
+
+            return $this->response->withType('application/json')
+                ->withStringBody(json_encode($events));
+
+        } catch (\Throwable $exception) {
+            die($exception->getMessage());
+        }
     }
 
     /**
@@ -52,8 +63,6 @@ class EventsController extends AppController {
      */
     public function add() {
         $eventEntity = $this->Events->newEmptyEntity();
-
-
         try {
             if ($this->request->is('post')) {
                 $data = $this->request->getData();
@@ -93,27 +102,15 @@ class EventsController extends AppController {
         $this->viewBuilder()->setOption('serialize', 'event');
     }
 
-    /**
-     * Edit method
-     *
-     * @param string|null $id Event id.
-     * @return \Cake\Http\Response|null|void Redirects on successful edit, renders view otherwise.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
-     */
     public function edit($id = null) {
-        $event = $this->Events->get($id, [
-            'contain' => [],
-        ]);
-        if ($this->request->is(['patch', 'post', 'put'])) {
-            $event = $this->Events->patchEntity($event, $this->request->getData());
-            if ($this->Events->save($event)) {
-                $this->Flash->success(__('The event has been saved.'));
-
-                return $this->redirect(['action' => 'index']);
-            }
-            $this->Flash->error(__('The event could not be saved. Please, try again.'));
-        }
-        $this->set(compact('event'));
+        // TODO: <Patric> - Update the logic of updating events
+        /*
+        Tasks:
+        -Remove the attendee, if not included on the updated event payload
+        -Add new attendee, for non existing attendee on the event details
+        -Update the frequency, if the frequency of event changed
+        -Update the following [starDateTime, endDateTime, duration, eventName], if changed
+        */
     }
 
     private function saveEventFrequency($data, $eventEntity) {
@@ -122,7 +119,7 @@ class EventsController extends AppController {
         $frequencyTable = $this->getTableLocator()->get('Frequency');
         $eventFrequencyTable = $this->getTableLocator()->get('EventFrequency');
         $eventAttendeesTable = $this->getTableLocator()->get('EventAttendees');
-        if(!isset($data['frequency'])) {
+        if (!isset($data['frequency'])) {
             throw new \Exception("frequency field missing");
         }
 

@@ -39,6 +39,58 @@
                     }
                 }
             }
+        },
+        "\/events\/instances": {
+            "get": {
+                "tags": [
+                    "Events"
+                ],
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "start",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2020-02-13 01:00"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "end",
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2021-02-13 08:00"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "invitees",
+                        "schema": {
+                            "type": "string",
+                            "example": "1,2,3"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application\/json": {
+                                "schema": {
+                                    "type": "string",
+                                    "example": [
+                                        {
+                                            "foo": "bar"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {

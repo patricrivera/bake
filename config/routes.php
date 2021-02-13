@@ -45,19 +45,22 @@ use Cake\Routing\RouteBuilder;
 $routes->setRouteClass(DashedRoute::class);
 
 $routes->scope('/', function (RouteBuilder $builder) {
-    /*
-     * Here, we are connecting '/' (base path) to a controller called 'Pages',
-     * its action called 'display', and we pass a param to select the view file
-     * to use (in this case, templates/Pages/home.php)...
-     */
-    $builder->connect('/', ['controller' => 'Pages', 'action' => 'display', 'home']);
-
-    /*
-     * ...and connect the rest of 'Pages' controller's URLs.
-     */
-    $builder->connect('/pages/*', 'Pages::display');
-
     $builder->connect('/api-docs', ['controller' => 'Swagger', 'action' => 'index', 'plugin' => 'SwaggerBake']);
+    $builder->resources('Events', [
+        'only' => ['add', 'view'],
+        'map' => [
+            'add' => [
+                'action' => 'add',
+                'method' => 'POST',
+                'path' => '/'
+            ],
+            'view' => [
+                'action' => 'view',
+                'method' => 'GET',
+                'path' => '/instances'
+            ],
+        ]
+    ]);
 
     /*
      * Connect catchall routes for all controllers.
@@ -73,21 +76,6 @@ $routes->scope('/', function (RouteBuilder $builder) {
      * routes you want in your application.
      */
     $builder->fallbacks();
-});
-
-$routes->scope('/', function (RouteBuilder $routes) {
-    $routes->setExtensions(['json']);
-    $routes->resources('Events', [
-        'only' => ['add'],
-        'map' => [
-            'add' => [
-                'action' => 'add',
-                'method' => 'POST',
-                'path' => '/'
-            ],
-        ]
-    ]);
-//    $routes->resources('Attendees');
 });
 
 /*
