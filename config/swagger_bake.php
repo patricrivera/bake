@@ -46,7 +46,7 @@ return [
         'prefix' => '/',
         'yml' => '/config/swagger.yml',
         'json' => '/webroot/swagger.json',
-        'webPath' => '/swagger.json',
+        'webPath' => '/webroot/swagger.json',
         'hotReload' => \Cake\Core\Configure::read('debug'),
         /** optional configurations below:  **/
         /*
