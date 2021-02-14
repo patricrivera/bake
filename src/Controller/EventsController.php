@@ -7,6 +7,7 @@ use App\Model\Entity\Event;
 use Cake\Datasource\Exception\RecordNotFoundException;
 use Cake\Datasource\ResultSetInterface;
 use Cake\I18n\FrozenTime;
+use Cake\ORM\Query;
 use mysql_xdevapi\Exception;
 use Psy\Util\Json;
 
@@ -35,7 +36,7 @@ class EventsController extends AppController {
         try {
             $data = $this->request->getQuery();
             // Set the logic for filtering dates
-            $events = $this->Events->find('all', ['conditions' =>
+            $query = $this->Events->find('all', ['conditions' =>
                 [
                     'startDateTime >=' => new \DateTime($data['start']),
                     'endDateTime <=' => new \DateTime($data['end'])
@@ -44,11 +45,35 @@ class EventsController extends AppController {
 
             // Set the logic for filtering attendees
             if(isset($data['invitees'])) {
-                // Logic goes here
+                $invitees = explode(",", $data['invitees']);
+                $query->contain(['EventAttendees']);
+                $query->matching('EventAttendees', function (Query $q) use ($invitees) {
+                    return $q->where(['EventAttendees.attendee_id IN' => $invitees]);
+                });
+            }
+            $events = $query->all();
+
+            $response = [
+                'items' => [],
+            ];
+            /* @var $event Event */
+            foreach ($events as $event) {
+                $inviteeIds = [];
+                $attendees = $event->event_attendees;
+                foreach ($attendees as $attendee) {
+                    $inviteeIds[] = $attendee->id;
+                }
+                $response['items'][] = [
+                  'event_id' => $event->id,
+                  'eventName' => $event->eventName,
+                  'startDateTime' => $event->startDateTime,
+                  'endDateTime' => $event->endDateTime,
+                  'invitees' => $inviteeIds,
+                ];
             }
 
             return $this->response->withType('application/json')
-                ->withStringBody(json_encode($events));
+                ->withStringBody(json_encode($response));
 
         } catch (\Throwable $exception) {
             die($exception->getMessage());

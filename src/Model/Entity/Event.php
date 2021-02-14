@@ -16,8 +16,8 @@ use Cake\ORM\Entity;
  * @property \Cake\I18n\FrozenTime $created
  * @property \Cake\I18n\FrozenTime|null $modified
  *
- * @property \App\Model\Entity\EventAttendee[] $attendees
- * @property \App\Model\Entity\EventFrequency[] $frequency
+ * @property \App\Model\Entity\EventAttendee[] $event_attendees
+ * @property \App\Model\Entity\EventFrequency[] $event_frequency
  */
 class Event extends Entity
 {
@@ -37,7 +37,7 @@ class Event extends Entity
         'endDateTime' => true,
         'created' => true,
         'modified' => true,
-        'attendees' => true,
-        'frequency' => true,
+        'event_attendees' => true,
+        'event_frequency' => true,
     ];
 }
