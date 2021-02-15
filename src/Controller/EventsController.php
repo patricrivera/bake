@@ -50,6 +50,7 @@ class EventsController extends AppController {
                 $query->matching('EventAttendees', function (Query $q) use ($invitees) {
                     return $q->where(['EventAttendees.attendee_id IN' => $invitees]);
                 });
+                $query->group(['Events.id']);
             }
             $events = $query->all();
 
