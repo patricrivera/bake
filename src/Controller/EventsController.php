@@ -62,7 +62,7 @@ class EventsController extends AppController {
                 $inviteeIds = [];
                 $attendees = $event->event_attendees;
                 foreach ($attendees as $attendee) {
-                    $inviteeIds[] = $attendee->id;
+                    $inviteeIds[] = $attendee->attendee_id;
                 }
                 $response['items'][] = [
                   'event_id' => $event->id,
