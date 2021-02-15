@@ -36,12 +36,15 @@ class EventsController extends AppController {
         try {
             $data = $this->request->getQuery();
             // Set the logic for filtering dates
-            $query = $this->Events->find('all', ['conditions' =>
-                [
-                    'startDateTime >=' => new \DateTime($data['start']),
-                    'endDateTime <=' => new \DateTime($data['end'])
-                ]
-            ]);
+            $query = $this->Events->find('all');
+
+            if(isset($data['start'])) {
+                $query->where(['startDateTime >=' => new \DateTime($data['start'] )]);
+            }
+
+            if(isset($data['end'])) {
+                $query->where(['endDateTime <=' => new \DateTime($data['end'] )]);
+            }
 
             // Set the logic for filtering attendees
             if(isset($data['invitees'])) {
@@ -61,9 +64,12 @@ class EventsController extends AppController {
             foreach ($events as $event) {
                 $inviteeIds = [];
                 $attendees = $event->event_attendees;
-                foreach ($attendees as $attendee) {
-                    $inviteeIds[] = $attendee->attendee_id;
+                if ($attendees) {
+                    foreach ($attendees as $attendee) {
+                        $inviteeIds[] = $attendee->attendee_id;
+                    }
                 }
+
                 $response['items'][] = [
                   'event_id' => $event->id,
                   'eventName' => $event->eventName,
