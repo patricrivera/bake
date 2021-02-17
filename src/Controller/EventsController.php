@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Model\Entity\Event;
+use Cake\Datasource\EntityInterface;
 use Cake\Datasource\Exception\RecordNotFoundException;
 use Cake\Datasource\ResultSetInterface;
 use Cake\I18n\FrozenTime;
@@ -130,6 +131,7 @@ class EventsController extends AppController {
             $this->set([
                 'event' => ['status' => 'error', 'message' => $message],
             ]);
+            /* TODO: <Patric> - Create a standard response for error messages */
         }
         $this->viewBuilder()->setOption('serialize', 'event');
     }
@@ -145,7 +147,7 @@ class EventsController extends AppController {
         */
     }
 
-    private function saveEventFrequency($data, $eventEntity) {
+    private function saveEventFrequency($data, EntityInterface &$eventEntity) {
         // Get the tables
         $attendeesTable = $this->getTableLocator()->get('Attendees');
         $frequencyTable = $this->getTableLocator()->get('Frequency');
@@ -174,6 +176,20 @@ class EventsController extends AppController {
             }
         }
 
+        switch ($data['frequency']) {
+            case "Once-Off":
+                /* TODO: <Patric> - Check the frequency, non negative number must be accepted */
+                /* If a once-off frequency we must calculate the endtime using the supplied duration (in minutes) */
+                /** @var FrozenTime $startDateTime */
+                $startDateTime = $eventEntity->get('startDateTime');
+                $eventEntity->set('endDateTime', $startDateTime->addMinute($data['duration'] ?? 0));
+                break;
+            case "Weekly":
+                break;
+            case "Monthly":
+                break;
+        }
+
         // Save Event Frequency Table
         $eventFrequencyEntity = $eventFrequencyTable->newEmptyEntity();
         $eventFrequencyEntity->set('event', $eventEntity);
@@ -191,4 +207,5 @@ class EventsController extends AppController {
 
         return $frequencyEntity;
     }
+
 }
