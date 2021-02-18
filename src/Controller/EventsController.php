@@ -130,7 +130,7 @@ class EventsController extends AppController {
                         'eventName' => $events['eventName'],
                         'frequency' => $frequencyEntity->get('name'),
                         'startDateTime' => $data['startDateTime'],
-                        'endDateTime' => $data['endDateTime'],
+                        'endDateTime' => $data['endDateTime'] ?? $data['startDateTime'],
                         'duration' => $data['duration'],
                         'invitees' => $data['invitees'],
                     ],
