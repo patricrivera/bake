@@ -27,6 +27,7 @@ class EventsTableTest extends TestCase
         'app.Events',
         'app.EventAttendees',
         'app.EventFrequency',
+        'app.EventOccurrence',
     ];
 
     /**
