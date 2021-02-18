@@ -10,14 +10,12 @@ use Cake\ORM\Entity;
  *
  * @property int $id
  * @property string $eventName
- * @property int $duration
- * @property \Cake\I18n\FrozenTime $startDateTime
- * @property \Cake\I18n\FrozenTime|null $endDateTime
  * @property \Cake\I18n\FrozenTime $created
  * @property \Cake\I18n\FrozenTime|null $modified
  *
  * @property \App\Model\Entity\EventAttendee[] $event_attendees
  * @property \App\Model\Entity\EventFrequency[] $event_frequency
+ * @property \App\Model\Entity\EventOccurrence[] $event_occurrence
  */
 class Event extends Entity
 {
@@ -32,12 +30,10 @@ class Event extends Entity
      */
     protected $_accessible = [
         'eventName' => true,
-        'duration' => true,
-        'startDateTime' => true,
-        'endDateTime' => true,
         'created' => true,
         'modified' => true,
         'event_attendees' => true,
         'event_frequency' => true,
+        'event_occurrence' => true,
     ];
 }

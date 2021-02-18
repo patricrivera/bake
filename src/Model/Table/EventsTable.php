@@ -13,6 +13,7 @@ use Cake\Validation\Validator;
  *
  * @property \App\Model\Table\EventAttendeesTable&\Cake\ORM\Association\HasMany $EventAttendees
  * @property \App\Model\Table\EventFrequencyTable&\Cake\ORM\Association\HasMany $EventFrequency
+ * @property \App\Model\Table\EventOccurrenceTable&\Cake\ORM\Association\HasMany $EventOccurrence
  *
  * @method \App\Model\Entity\Event newEmptyEntity()
  * @method \App\Model\Entity\Event newEntity(array $data, array $options = [])
@@ -54,6 +55,9 @@ class EventsTable extends Table
         $this->hasMany('EventFrequency', [
             'foreignKey' => 'event_id',
         ]);
+        $this->hasMany('EventOccurrence', [
+            'foreignKey' => 'event_id',
+        ]);
     }
 
     /**
@@ -73,20 +77,6 @@ class EventsTable extends Table
             ->maxLength('eventName', 255)
             ->requirePresence('eventName', 'create')
             ->notEmptyString('eventName');
-
-        $validator
-            ->integer('duration')
-            ->requirePresence('duration', 'create')
-            ->notEmptyString('duration');
-
-        $validator
-            ->dateTime('startDateTime')
-            ->requirePresence('startDateTime', 'create')
-            ->notEmptyDateTime('startDateTime');
-
-        $validator
-            ->dateTime('endDateTime')
-            ->allowEmptyDateTime('endDateTime');
 
         return $validator;
     }
