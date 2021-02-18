@@ -197,6 +197,7 @@ class EventsController extends AppController {
                 $this->validateConflictingSchedule($startDateTime, $startDateTime->addMinute($duration));
                 $eventOccurenceEntities[] = $eventOccurrenceTable->newEmptyEntity()
                     ->set('event', $eventEntity)
+                    ->set('duration', $duration)
                     ->set('startDateTime', $startDateTime)
                     ->set('endDateTime', $startDateTime->addMinute($duration));
                 break;
