@@ -41,7 +41,7 @@ class EventsController extends AppController {
             /** @var Query $query */
             $eventOccurrenceTable = $this->getTableLocator()->get('EventOccurrence');
             $query = $eventOccurrenceTable->find('all');
-            $query->contain(['Events' => ['EventAttendees']]);
+            $query->contain(['Events', 'EventAttendees']);
 
             if (isset($data['start'])) {
                 $query->where(['EventOccurrence.startDateTime >=' => new \DateTime($data['start'])]);
@@ -61,6 +61,7 @@ class EventsController extends AppController {
 
             // Sort the event by startDateTime
             $query->orderAsc('EventOccurrence.startDateTime');
+            $query->distinct('EventOccurrence.id');
             $events = $query->all();
 
             $response = [
@@ -69,12 +70,14 @@ class EventsController extends AppController {
             $inviteeIds = [];
             /* @var $event EventOccurrence */
             foreach ($events as $occurrence) {
-                $attendees = $occurrence->event->event_attendees;
+                $attendees = $occurrence->event_attendees;
                 if ($attendees && !isset($inviteeIds[$occurrence->event->id])) {
+                    $inviteeIds[$occurrence->event->id] = [];
                     foreach ($attendees as $attendee) {
                         $inviteeIds[$occurrence->event->id][] = $attendee->attendee_id;
                     }
                 }
+
                 $response['items'][] = [
                     'event_id' => $occurrence->event->id,
                     'eventName' => $occurrence->event->eventName,
@@ -85,12 +88,12 @@ class EventsController extends AppController {
 
             }
 
-            return $this->response->withType('application/json')
-                ->withStringBody(json_encode($response));
-
         } catch (\Throwable $exception) {
-            die($exception->getMessage());
+            $message = $exception->getMessage();
+            $response = ['status' => 'error', 'message' => $message];
         }
+        return $this->response->withType('application/json')
+            ->withStringBody(json_encode($response));
     }
 
     /**

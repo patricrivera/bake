@@ -47,6 +47,10 @@ class EventOccurrenceTable extends Table
             'foreignKey' => 'event_id',
             'joinType' => 'INNER',
         ]);
+
+        $this->hasMany('EventAttendees', [
+            'foreignKey' => 'event_id',
+        ]);
     }
 
     /**

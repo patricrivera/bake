@@ -33,5 +33,6 @@ class EventOccurrence extends Entity
         'startDateTime' => true,
         'endDateTime' => true,
         'event' => true,
+        'event_attendees' => true,
     ];
 }
