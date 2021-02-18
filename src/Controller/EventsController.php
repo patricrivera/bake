@@ -33,7 +33,6 @@ class EventsController extends AppController {
         $this->set(compact('events'));
     }
 
-    // TODO <Patric> - Refactor the view method, this should use the new table event_occurrence for finding events
     public function view() {
         try {
             $data = $this->request->getQuery();
