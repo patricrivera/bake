@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Model\Entity\Event;
+use App\Model\Entity\EventOccurrence;
 use Cake\Datasource\EntityInterface;
 use Cake\Datasource\Exception\RecordNotFoundException;
 use Cake\Datasource\ResultSetInterface;
@@ -38,25 +39,22 @@ class EventsController extends AppController {
             $data = $this->request->getQuery();
             // Set the logic for filtering dates
             /** @var Query $query */
-            $query = $this->Events->find('all');
-            $query->contain(['EventOccurrence', 'EventAttendees']);
+            $eventOccurrenceTable = $this->getTableLocator()->get('EventOccurrence');
+            $query = $eventOccurrenceTable->find('all');
+            $query->contain(['Events' => ['EventAttendees']]);
 
             if (isset($data['start'])) {
-                $query->matching('EventOccurrence', function (Query $q) use ($data) {
-                    return $q->where(['EventOccurrence.startDateTime >=' => new \DateTime($data['start'])]);
-                });
+                $query->where(['EventOccurrence.startDateTime >=' => new \DateTime($data['start'])]);
             }
 
             if (isset($data['end'])) {
-                $query->matching('EventOccurrence', function (Query $q) use ($data) {
-                    return $q->where(['EventOccurrence.endDateTime >=' => new \DateTime($data['end'])]);
-                });
+                $query->where(['EventOccurrence.endDateTime >=' => new \DateTime($data['end'])]);
             }
 
             // Set the logic for filtering attendees
             if (isset($data['invitees'])) {
                 $invitees = explode(",", $data['invitees']);
-                $query->matching('EventAttendees', function (Query $q) use ($invitees) {
+                $query->leftJoinWith('EventAttendees', function (Query $q) use ($invitees) {
                     return $q->where(['EventAttendees.attendee_id IN' => $invitees]);
                 });
             }
@@ -68,26 +66,23 @@ class EventsController extends AppController {
             $response = [
                 'items' => [],
             ];
-            /* @var $event Event */
-            foreach ($events as $event) {
-                $inviteeIds = [];
-                $attendees = $event->event_attendees;
-                $occurrences = $event->event_occurrence;
-
-                if ($attendees) {
+            $inviteeIds = [];
+            /* @var $event EventOccurrence */
+            foreach ($events as $occurrence) {
+                $attendees = $occurrence->event->event_attendees;
+                if ($attendees && !isset($inviteeIds[$occurrence->event->id])) {
                     foreach ($attendees as $attendee) {
-                        $inviteeIds[] = $attendee->attendee_id;
+                        $inviteeIds[$occurrence->event->id][] = $attendee->attendee_id;
                     }
                 }
-                foreach ($occurrences as $occurrence) {
-                    $response['items'][] = [
-                        'event_id' => $event->id,
-                        'eventName' => $event->eventName,
-                        'startDateTime' => $occurrence->startDateTime,
-                        'endDateTime' => $occurrence->endDateTime,
-                        'invitees' => $inviteeIds,
-                    ];
-                }
+                $response['items'][] = [
+                    'event_id' => $occurrence->event->id,
+                    'eventName' => $occurrence->event->eventName,
+                    'startDateTime' => $occurrence->startDateTime->toDateTimeString(),
+                    'endDateTime' => $occurrence->endDateTime->toDateTimeString(),
+                    'invitees' => $inviteeIds[$occurrence->event->id],
+                ];
+
             }
 
             return $this->response->withType('application/json')
