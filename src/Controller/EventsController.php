@@ -254,10 +254,10 @@ class EventsController extends AppController {
         $eventOccurrenceTable = $this->getTableLocator()->get('EventOccurrence');
         $query = $eventOccurrenceTable->find('all');
         $query->contain(['Events']);
-        $query->where([
-            'startDateTime >=' => $start,
-            'endDateTime <=' => $end
-        ]);
+        $query->where(['(startDateTime BETWEEN :start AND :end) OR (endDateTime BETWEEN :start AND :end)'])
+            ->bind(':start', $start->toDateTimeString(), 'date')
+            ->bind(':end',   $end->toDateTimeString(), 'date');
+
         $conflict = $query->first();
         if($conflict) {
             $eventName = $conflict->event->eventName;
