@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 use Migrations\AbstractMigration;
 
-class CreateEvents extends AbstractMigration
+class CreateEventOccurrence extends AbstractMigration
 {
     /**
      * Change Method.
@@ -14,19 +14,17 @@ class CreateEvents extends AbstractMigration
      */
     public function change()
     {
-        $table = $this->table('events');
+        $table = $this->table('event_occurrence');
+        $table->addColumn('event_id', 'integer')
+            ->addForeignKey('event_id', 'events', 'id', ['delete' => 'CASCADE', 'update' => 'NO_ACTION']);
 
-        $table->addColumn('eventName', 'string', [
-            'default' => null,
-            'limit' => 255,
-            'null' => false,
-        ]);
+        $table->addColumn('duration', 'integer');
 
-        $table->addColumn('created', 'datetime', [
+        $table->addColumn('startDateTime', 'datetime', [
             'default' => null,
             'null' => false,
         ]);
-        $table->addColumn('modified', 'datetime', [
+        $table->addColumn('endDateTime', 'datetime', [
             'default' => null,
             'null' => true,
         ]);

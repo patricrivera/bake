@@ -19,9 +19,6 @@ class EventsFixture extends TestFixture
     public $fields = [
         'id' => ['type' => 'integer', 'length' => null, 'unsigned' => false, 'null' => false, 'default' => null, 'comment' => '', 'autoIncrement' => true, 'precision' => null],
         'eventName' => ['type' => 'string', 'length' => 255, 'null' => false, 'default' => null, 'collate' => 'utf8mb4_0900_ai_ci', 'comment' => '', 'precision' => null],
-        'duration' => ['type' => 'integer', 'length' => null, 'unsigned' => false, 'null' => false, 'default' => null, 'comment' => '', 'precision' => null, 'autoIncrement' => null],
-        'startDateTime' => ['type' => 'datetime', 'length' => null, 'precision' => null, 'null' => false, 'default' => null, 'comment' => ''],
-        'endDateTime' => ['type' => 'datetime', 'length' => null, 'precision' => null, 'null' => true, 'default' => null, 'comment' => ''],
         'created' => ['type' => 'datetime', 'length' => null, 'precision' => null, 'null' => false, 'default' => null, 'comment' => ''],
         'modified' => ['type' => 'datetime', 'length' => null, 'precision' => null, 'null' => true, 'default' => null, 'comment' => ''],
         '_constraints' => [
@@ -44,11 +41,8 @@ class EventsFixture extends TestFixture
             [
                 'id' => 1,
                 'eventName' => 'Lorem ipsum dolor sit amet',
-                'duration' => 1,
-                'startDateTime' => '2021-02-13 08:12:47',
-                'endDateTime' => '2021-02-13 08:12:47',
-                'created' => '2021-02-13 08:12:47',
-                'modified' => '2021-02-13 08:12:47',
+                'created' => '2021-02-18 14:33:19',
+                'modified' => '2021-02-18 14:33:19',
             ],
         ];
         parent::init();

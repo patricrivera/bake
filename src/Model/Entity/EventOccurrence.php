@@ -6,18 +6,17 @@ namespace App\Model\Entity;
 use Cake\ORM\Entity;
 
 /**
- * Event Entity
+ * EventOccurrence Entity
  *
  * @property int $id
- * @property string $eventName
- * @property \Cake\I18n\FrozenTime $created
- * @property \Cake\I18n\FrozenTime|null $modified
+ * @property int $event_id
+ * @property int $duration
+ * @property \Cake\I18n\FrozenTime $startDateTime
+ * @property \Cake\I18n\FrozenTime|null $endDateTime
  *
- * @property \App\Model\Entity\EventAttendee[] $event_attendees
- * @property \App\Model\Entity\EventFrequency[] $event_frequency
- * @property \App\Model\Entity\EventOccurrence[] $event_occurrence
+ * @property \App\Model\Entity\Event $event
  */
-class Event extends Entity
+class EventOccurrence extends Entity
 {
     /**
      * Fields that can be mass assigned using newEntity() or patchEntity().
@@ -29,11 +28,11 @@ class Event extends Entity
      * @var array
      */
     protected $_accessible = [
-        'eventName' => true,
-        'created' => true,
-        'modified' => true,
+        'event_id' => true,
+        'duration' => true,
+        'startDateTime' => true,
+        'endDateTime' => true,
+        'event' => true,
         'event_attendees' => true,
-        'event_frequency' => true,
-        'event_occurrence' => true,
     ];
 }

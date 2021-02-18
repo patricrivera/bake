@@ -3,20 +3,20 @@ declare(strict_types=1);
 
 namespace App\Test\TestCase\Model\Table;
 
-use App\Model\Table\EventsTable;
+use App\Model\Table\EventOccurrenceTable;
 use Cake\TestSuite\TestCase;
 
 /**
- * App\Model\Table\EventsTable Test Case
+ * App\Model\Table\EventOccurrenceTable Test Case
  */
-class EventsTableTest extends TestCase
+class EventOccurrenceTableTest extends TestCase
 {
     /**
      * Test subject
      *
-     * @var \App\Model\Table\EventsTable
+     * @var \App\Model\Table\EventOccurrenceTable
      */
-    protected $Events;
+    protected $EventOccurrence;
 
     /**
      * Fixtures
@@ -24,10 +24,8 @@ class EventsTableTest extends TestCase
      * @var array
      */
     protected $fixtures = [
-        'app.Events',
-        'app.EventAttendees',
-        'app.EventFrequency',
         'app.EventOccurrence',
+        'app.Events',
     ];
 
     /**
@@ -38,8 +36,8 @@ class EventsTableTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
-        $config = $this->getTableLocator()->exists('Events') ? [] : ['className' => EventsTable::class];
-        $this->Events = $this->getTableLocator()->get('Events', $config);
+        $config = $this->getTableLocator()->exists('EventOccurrence') ? [] : ['className' => EventOccurrenceTable::class];
+        $this->EventOccurrence = $this->getTableLocator()->get('EventOccurrence', $config);
     }
 
     /**
@@ -49,7 +47,7 @@ class EventsTableTest extends TestCase
      */
     public function tearDown(): void
     {
-        unset($this->Events);
+        unset($this->EventOccurrence);
 
         parent::tearDown();
     }
@@ -60,6 +58,16 @@ class EventsTableTest extends TestCase
      * @return void
      */
     public function testValidationDefault(): void
+    {
+        $this->markTestIncomplete('Not implemented yet.');
+    }
+
+    /**
+     * Test buildRules method
+     *
+     * @return void
+     */
+    public function testBuildRules(): void
     {
         $this->markTestIncomplete('Not implemented yet.');
     }
