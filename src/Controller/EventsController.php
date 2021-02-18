@@ -41,20 +41,20 @@ class EventsController extends AppController {
             $query = $this->Events->find('all');
             $query->contain(['EventOccurrence', 'EventAttendees']);
 
-            if(isset($data['start'])) {
+            if (isset($data['start'])) {
                 $query->matching('EventOccurrence', function (Query $q) use ($data) {
-                    return $q->where(['EventOccurrence.startDateTime >=' => new \DateTime($data['start'] )]);
+                    return $q->where(['EventOccurrence.startDateTime >=' => new \DateTime($data['start'])]);
                 });
             }
 
-            if(isset($data['end'])) {
+            if (isset($data['end'])) {
                 $query->matching('EventOccurrence', function (Query $q) use ($data) {
-                    return $q->where(['EventOccurrence.endDateTime >=' => new \DateTime($data['end'] )]);
+                    return $q->where(['EventOccurrence.endDateTime >=' => new \DateTime($data['end'])]);
                 });
             }
 
             // Set the logic for filtering attendees
-            if(isset($data['invitees'])) {
+            if (isset($data['invitees'])) {
                 $invitees = explode(",", $data['invitees']);
                 $query->matching('EventAttendees', function (Query $q) use ($invitees) {
                     return $q->where(['EventAttendees.attendee_id IN' => $invitees]);
@@ -111,7 +111,7 @@ class EventsController extends AppController {
                 $data = $this->request->getData();
                 $eventEntity = $this->Events->patchEntity($eventEntity, $data);
                 // Before Saving, check first if the Attendees and Frequency is present
-                $frequencyEntity = $this->saveEventFrequency($data, $eventEntity);
+                $this->saveEventFrequency($data, $eventEntity);
 
                 if (!$this->Events->save($eventEntity)) {
                     $errors = $eventEntity->getErrors();
@@ -123,17 +123,22 @@ class EventsController extends AppController {
                         $detail = $detail->format('Y-m-d H:i');
                     }
                 });
+                $startDateTime = new FrozenTime($data['startDateTime']);
+                $response = [
+                    'id' => $events['id'],
+                    'eventName' => $events['eventName'],
+                    'frequency' => $data['frequency'],
+                    'startDateTime' => $startDateTime->toDateTimeString(),
+                    'endDateTime' => $startDateTime->addMinutes($data['duration'] ?? 0)->toDateTimeString(),
+                    'duration' => $data['duration'],
+                    'invitees' => $data['invitees'],
+                ];
+                if (isset($data['endDateTime'])) {
+                    $response['endDateTime'] = $data['endDateTime'];
+                }
 
                 $this->set([
-                    'event' => [
-                        'id' => $events['id'],
-                        'eventName' => $events['eventName'],
-                        'frequency' => $frequencyEntity->get('name'),
-                        'startDateTime' => $data['startDateTime'],
-                        'endDateTime' => $data['endDateTime'] ?? $data['startDateTime'],
-                        'duration' => $data['duration'],
-                        'invitees' => $data['invitees'],
-                    ],
+                    'event' => $response,
                 ]);
             }
         } catch (\Throwable $exception) {
@@ -156,7 +161,7 @@ class EventsController extends AppController {
         */
     }
 
-    private function saveEventFrequency($data, EntityInterface &$eventEntity) {
+    private function saveEventFrequency($data, EntityInterface $eventEntity) {
         // Get the tables
         $attendeesTable = $this->getTableLocator()->get('Attendees');
         $frequencyTable = $this->getTableLocator()->get('Frequency');
@@ -246,8 +251,6 @@ class EventsController extends AppController {
                 ->set('event', $eventEntity);
         }
         $eventAttendeesTable->saveMany($eventAttendeesEntities);
-
-        return $frequencyEntity;
     }
 
     private function validateConflictingSchedule(FrozenTime $start, FrozenTime $end) {
@@ -256,10 +259,10 @@ class EventsController extends AppController {
         $query->contain(['Events']);
         $query->where(['(startDateTime BETWEEN :start AND :end) OR (endDateTime BETWEEN :start AND :end)'])
             ->bind(':start', $start->toDateTimeString(), 'date')
-            ->bind(':end',   $end->toDateTimeString(), 'date');
+            ->bind(':end', $end->toDateTimeString(), 'date');
 
         $conflict = $query->first();
-        if($conflict) {
+        if ($conflict) {
             $eventName = $conflict->event->eventName;
             $timeSlot = "$conflict->startDateTime to $conflict->endDateTime";
             throw new \Exception("conflicting schedule with $eventName at $timeSlot");
