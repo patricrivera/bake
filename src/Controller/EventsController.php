@@ -54,7 +54,7 @@ class EventsController extends AppController {
             // Set the logic for filtering attendees
             if (isset($data['invitees'])) {
                 $invitees = explode(",", $data['invitees']);
-                $query->leftJoinWith('EventAttendees', function (Query $q) use ($invitees) {
+                $query->innerJoinWith('EventAttendees', function (Query $q) use ($invitees) {
                     return $q->where(['EventAttendees.attendee_id IN' => $invitees]);
                 });
             }
