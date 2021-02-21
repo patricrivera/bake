@@ -83,4 +83,31 @@ class EventAttendeesTable extends Table
 
         return $rules;
     }
+
+    /**
+     * @param $id
+     * @return int
+     */
+    public function purgeByEventId($id)
+    {
+        return $this->deleteAll(['event_id' => $id]);
+    }
+
+    /**
+     * @param $data
+     * @param $eventEntity
+     * @throws \Exception
+     */
+    public function saveEvent($data, $eventEntity) {
+        //Get the attendees entities
+        $attendees = $this->Attendees->getMultipleByIds($data['invitees'] ?? []);
+
+        $eventAttendeesEntities = [];
+        foreach ($attendees as $attendeeEntity) {
+            $eventAttendeesEntities[] = $this->newEmptyEntity()
+                ->set('attendee', $attendeeEntity)
+                ->set('event', $eventEntity);
+        }
+        $this->saveManyOrFail($eventAttendeesEntities);
+    }
 }

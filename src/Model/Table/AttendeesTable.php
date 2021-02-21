@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use Cake\Datasource\Exception\RecordNotFoundException;
 use Cake\ORM\Query;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
@@ -73,5 +74,25 @@ class AttendeesTable extends Table
             ->notEmptyString('lastName');
 
         return $validator;
+    }
+
+    /**
+     * @param array $ids
+     * @return array
+     * @throws \Exception
+     */
+    public function getMultipleByIds($ids = []) {
+        $attendeesEntities = [];
+        foreach ($ids as $invitee) {
+            try {
+                $attendee = $this->get($invitee);
+                $attendeesEntities[] = $attendee;
+                // Catch the record not found exception, and throw a generic message
+            } catch (RecordNotFoundException $exception) {
+                throw new \Exception("Invitee $invitee not found!");
+            }
+        }
+
+        return $attendeesEntities;
     }
 }
