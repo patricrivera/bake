@@ -38,6 +38,33 @@
                         }
                     }
                 }
+            },
+            "put": {
+                "tags": [
+                    "Events"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application\/json": {
+                            "schema": {
+                                "$ref": "#\/components\/schemas\/EventsUpdate"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application\/json": {
+                                "schema": {
+                                    "$ref": "#\/components\/schemas\/EventsUpdate"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "\/events\/instances": {
@@ -79,12 +106,7 @@
                         "content": {
                             "application\/json": {
                                 "schema": {
-                                    "type": "string",
-                                    "example": [
-                                        {
-                                            "foo": "bar"
-                                        }
-                                    ]
+                                    "$ref": "#\/components\/schemas\/EventsCollection"
                                 }
                             }
                         }
@@ -146,7 +168,26 @@
                     }
                 }
             },
-            "EventsResponse": {
+            "EventsCollection": {
+                "description": "",
+                "allOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "items": {
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#\/components\/schemas\/EventsUpdate"
+                                }
+                            }
+                        },
+                        "required": [
+                            "items"
+                        ]
+                    }
+                ]
+            },
+            "EventsUpdate": {
                 "description": "",
                 "allOf": [
                     {
