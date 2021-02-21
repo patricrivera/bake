@@ -18,6 +18,27 @@ use Psy\Util\Json;
  * @method Event[]|ResultSetInterface paginate($object = null, array $settings = [])
  */
 class EventsController extends AppController {
+
+    const VALID_FREQUENCY = ['Once-Off', "Weekly", "Monthly"];
+
+    const FREQUENCY_OPERATION = [
+        'add' => [
+            'Once-Off' => 'addDays',
+            'Weekly' => 'addWeeks',
+            'Monthly' => 'addMonths',
+        ],
+        'diff' => [
+            'Once-Off' => 'diffInDays',
+            'Weekly' => 'diffInWeeks',
+            'Monthly' => 'diffInMonths',
+        ],
+    ];
+
+    /** @var int Number of default occurrence if no endDateTime was provided,
+     * note that it has additional one occurrence including the stardDateTime
+     */
+    const DEFAULT_OCCURRENCE = 9;
+
     /**
      * Index method
      *
@@ -107,19 +128,15 @@ class EventsController extends AppController {
             if ($this->request->is('post')) {
                 $data = $this->request->getData();
                 $eventEntity = $this->Events->patchEntity($eventEntity, $data);
-                // Before Saving, check first if the Attendees and Frequency is present
+                $this->prepareData($data);
+                $this->saveEventAttendees($data, $eventEntity);
                 $this->saveEventFrequency($data, $eventEntity);
-
+                $this->saveEventOccurrence($data, $eventEntity);
                 if (!$this->Events->save($eventEntity)) {
                     $errors = $eventEntity->getErrors();
                     throw new \Exception(json_encode($errors));
                 }
                 $events = $eventEntity->toArray();
-                array_walk($events, function (&$detail) {
-                    if ($detail instanceof FrozenTime) {
-                        $detail = $detail->format('Y-m-d H:i');
-                    }
-                });
                 $startDateTime = new FrozenTime($data['startDateTime']);
 
                 // TODO <Patric> - Should I change the response body when there are multiple event occurrence (monthly, weekly)
@@ -127,8 +144,8 @@ class EventsController extends AppController {
                     'id' => $events['id'],
                     'eventName' => $events['eventName'],
                     'frequency' => $data['frequency'],
-                    'startDateTime' => $startDateTime->toDateTimeString(),
-                    'endDateTime' => $startDateTime->addMinutes($data['duration'] ?? 0)->toDateTimeString(),
+                    'startDateTime' => $startDateTime->format('Y-m-d H:i'),
+                    'endDateTime' => $startDateTime->addMinutes($data['duration'] ?? 0)->format('Y-m-d H:i'),
                     'duration' => $data['duration'],
                     'invitees' => $data['invitees'],
                 ];
@@ -160,27 +177,77 @@ class EventsController extends AppController {
         */
     }
 
-    private function saveEventFrequency($data, EntityInterface $eventEntity) {
-        // Get the tables
-        $attendeesTable = $this->getTableLocator()->get('Attendees');
-        $frequencyTable = $this->getTableLocator()->get('Frequency');
-        $eventFrequencyTable = $this->getTableLocator()->get('EventFrequency');
-        $eventAttendeesTable = $this->getTableLocator()->get('EventAttendees');
-        $eventOccurrenceTable = $this->getTableLocator()->get('EventOccurrence');
-        if (!isset($data['frequency'])) {
-            throw new \Exception("frequency field missing");
+    /**
+     * @param $data
+     * @throws \Exception
+     */
+    private function prepareData(&$data) {
+        $frequencyName = $data['frequency'];
+        $data['startDateTime'] = new FrozenTime($data['startDateTime'] ?? "");
+        if ($frequencyName == "Once-Off") {
+            $data['endDateTime'] = $data['startDateTime'];
+        } else {
+            $data['endDateTime'] = (isset($data['endDateTime']))
+                ? new FrozenTime($data['endDateTime'] ?? "")
+                : $data['startDateTime']->{self::FREQUENCY_OPERATION['add'][$frequencyName]}(self::DEFAULT_OCCURRENCE);
         }
 
-        $frequencyEntity = $frequencyTable->find('all', [
-            'conditions' => ['name' => $data['frequency']]
-        ])->first();
-        if (!$frequencyEntity) {
-            throw new \Exception("Invalid Frequency");
+        // Validate if the endDateTime is less than the startDateTime
+        if ($data['endDateTime'] < $data['startDateTime']) {
+            throw new \Exception('endDateTime should be ahead of startDateTime.');
         }
+
+        // Validate if the frequency field is missing
+        if (!isset($data['frequency'])) {
+            throw new \Exception("frequency field missing.");
+        }
+
+        // Validate if existing frequency
+        if(!in_array($data['frequency'], self::VALID_FREQUENCY)) {
+            throw new \Exception("Invalid frequency.");
+        }
+
+        // Validate if the duration is non negative value
         $duration = $data['duration'] ?? 0;
         if ($duration < 0) {
-            throw new \Exception("Duration should not be negative number");
+            throw new \Exception("Duration should not be negative number.");
         }
+    }
+
+    /**
+     * @param $data
+     * @param EntityInterface $eventEntity
+     * @throws \Exception
+     */
+    private function saveEventOccurrence($data, EntityInterface $eventEntity) {
+        $eventOccurrenceTable = $this->getTableLocator()->get('EventOccurrence');
+        $duration = $data['duration'] ?? 0;
+        $frequency = $data['frequency'];
+        $startDateTime = $data['startDateTime'];
+        $endDateTime = $data['endDateTime'];
+
+        $eventOccurenceEntities = [];
+        $occurrenceDiff = $startDateTime->{self::FREQUENCY_OPERATION['diff'][$frequency]}($endDateTime);
+        for ($occurrence = 0; $occurrence <= $occurrenceDiff; $occurrence++) {
+            $currentOccurrence = $startDateTime->{self::FREQUENCY_OPERATION['add'][$frequency]}($occurrence);
+            $this->validateConflictingSchedule($currentOccurrence, $currentOccurrence->addMinute($duration));
+            $eventOccurenceEntities[] = $eventOccurrenceTable->newEmptyEntity()
+                ->set('event', $eventEntity)
+                ->set('duration', $duration)
+                ->set('startDateTime', $currentOccurrence)
+                ->set('endDateTime', $currentOccurrence->addMinute($duration));
+        }
+        $eventOccurrenceTable->saveManyOrFail($eventOccurenceEntities);
+    }
+
+    /**
+     * @param $data
+     * @param EntityInterface $eventEntity
+     * @throws \Exception
+     */
+    private function saveEventAttendees($data, EntityInterface $eventEntity) {
+        $attendeesTable = $this->getTableLocator()->get('Attendees');
+        $eventAttendeesTable = $this->getTableLocator()->get('EventAttendees');
 
         //Get the attendees entities
         $attendeesEntities = [];
@@ -193,64 +260,44 @@ class EventsController extends AppController {
                 throw new \Exception("Invitee $invitee not found!");
             }
         }
-        $startDateTime = new FrozenTime($data['startDateTime'] ?? "");
-        $eventOccurenceEntities = [];
-        switch ($data['frequency']) {
-            case "Once-Off":
-                $this->validateConflictingSchedule($startDateTime, $startDateTime->addMinute($duration));
-                $eventOccurenceEntities[] = $eventOccurrenceTable->newEmptyEntity()
-                    ->set('event', $eventEntity)
-                    ->set('duration', $duration)
-                    ->set('startDateTime', $startDateTime)
-                    ->set('endDateTime', $startDateTime->addMinute($duration));
-                break;
-            case "Weekly":
-                $endDateTime = new FrozenTime($data['endDateTime'] ?? $startDateTime->addWeeks(10));
-                for ($occurence = 0;
-                     $occurence <= $startDateTime->diffInWeeks($endDateTime);
-                     $occurence++) {
-                    $currentWeek = $startDateTime->addWeeks($occurence);
-                    $this->validateConflictingSchedule($currentWeek, $currentWeek->addMinute($duration));
-                    $eventOccurenceEntities[] = $eventOccurrenceTable->newEmptyEntity()
-                        ->set('event', $eventEntity)
-                        ->set('duration', $duration)
-                        ->set('startDateTime', $currentWeek)
-                        ->set('endDateTime', $currentWeek->addMinute($duration));
-                }
-                break;
-            case "Monthly":
-                $endDateTime = new FrozenTime($data['endDateTime'] ?? $startDateTime->addMonths(10));
-                for ($occurence = 0;
-                     $occurence <= $startDateTime->diffInMonths($endDateTime);
-                     $occurence++) {
-                    $currentMonth = $startDateTime->addMonth($occurence);
-                    $this->validateConflictingSchedule($currentMonth, $currentMonth->addMinute($duration));
-                    $eventOccurenceEntities[] = $eventOccurrenceTable->newEmptyEntity()
-                        ->set('event', $eventEntity)
-                        ->set('duration', $duration)
-                        ->set('startDateTime', $currentMonth)
-                        ->set('endDateTime', $currentMonth->addMinute($duration));
-                }
-                break;
-        }
-        $eventOccurrenceTable->saveMany($eventOccurenceEntities);
 
-        // Save Event Frequency Table
-        $eventFrequencyEntity = $eventFrequencyTable->newEmptyEntity();
-        $eventFrequencyEntity->set('event', $eventEntity);
-        $eventFrequencyEntity->set('frequency', $frequencyEntity);
-        $eventFrequencyTable->save($eventFrequencyEntity);
-
-        // Save Event Attendees Table
         $eventAttendeesEntities = [];
         foreach ($attendeesEntities as $attendeeEntity) {
             $eventAttendeesEntities[] = $eventAttendeesTable->newEmptyEntity()
                 ->set('attendee', $attendeeEntity)
                 ->set('event', $eventEntity);
         }
-        $eventAttendeesTable->saveMany($eventAttendeesEntities);
+        $eventAttendeesTable->saveManyOrFail($eventAttendeesEntities);
     }
 
+    /**
+     * @param $data
+     * @param EntityInterface $eventEntity
+     * @throws \Exception
+     */
+    private function saveEventFrequency($data, EntityInterface $eventEntity) {
+        $frequencyTable = $this->getTableLocator()->get('Frequency');
+        $eventFrequencyTable = $this->getTableLocator()->get('EventFrequency');
+
+        $frequencyEntity = $frequencyTable->find('all', [
+            'conditions' => ['name' => $data['frequency']]
+        ])->first();
+        if (!$frequencyEntity) {
+            throw new \Exception("Invalid Frequency");
+        }
+
+        // Save Event Frequency Table
+        $eventFrequencyEntity = $eventFrequencyTable->newEmptyEntity();
+        $eventFrequencyEntity->set('event', $eventEntity);
+        $eventFrequencyEntity->set('frequency', $frequencyEntity);
+        $eventFrequencyTable->saveOrFail($eventFrequencyEntity);
+    }
+
+    /**
+     * @param FrozenTime $start
+     * @param FrozenTime $end
+     * @throws \Exception
+     */
     private function validateConflictingSchedule(FrozenTime $start, FrozenTime $end) {
         $eventOccurrenceTable = $this->getTableLocator()->get('EventOccurrence');
         $query = $eventOccurrenceTable->find('all');
