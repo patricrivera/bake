@@ -32,14 +32,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EventsUpdate'
+              $ref: '#/components/schemas/EventsItem'
       responses:
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EventsUpdate'
+                $ref: '#/components/schemas/EventsItem'
   /events/instances:
     get:
       tags:
@@ -101,7 +101,7 @@ components:
             type: integer
           required: true
           example: [1,2,3,4]
-    EventsUpdate:
+    EventsItem:
       allOf:
         - type: object
           properties:
@@ -117,7 +117,7 @@ components:
             items:
               type: "array"
               items:
-                $ref: "#/components/schemas/EventsUpdate"
+                $ref: "#/components/schemas/EventsItem"
           required:
             - items
 

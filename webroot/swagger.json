@@ -48,7 +48,7 @@
                     "content": {
                         "application\/json": {
                             "schema": {
-                                "$ref": "#\/components\/schemas\/EventsUpdate"
+                                "$ref": "#\/components\/schemas\/EventsItem"
                             }
                         }
                     }
@@ -59,7 +59,7 @@
                         "content": {
                             "application\/json": {
                                 "schema": {
-                                    "$ref": "#\/components\/schemas\/EventsUpdate"
+                                    "$ref": "#\/components\/schemas\/EventsItem"
                                 }
                             }
                         }
@@ -177,7 +177,7 @@
                             "items": {
                                 "type": "array",
                                 "items": {
-                                    "$ref": "#\/components\/schemas\/EventsUpdate"
+                                    "$ref": "#\/components\/schemas\/EventsItem"
                                 }
                             }
                         },
@@ -187,7 +187,7 @@
                     }
                 ]
             },
-            "EventsUpdate": {
+            "EventsItem": {
                 "description": "",
                 "allOf": [
                     {
