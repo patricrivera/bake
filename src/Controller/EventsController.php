@@ -194,6 +194,7 @@ class EventsController extends AppController {
         }
         $events = $eventEntity->toArray();
         $startDateTime = new FrozenTime($data['startDateTime']);
+        $endDateTime = new FrozenTime($data['endDateTime']);
 
         // TODO <Patric> - Should I change the response body when there are multiple event occurrence (monthly, weekly)
         $response = [
@@ -201,14 +202,10 @@ class EventsController extends AppController {
             'eventName' => $events['eventName'],
             'frequency' => $data['frequency'],
             'startDateTime' => $startDateTime->format('Y-m-d H:i'),
-            'endDateTime' => $startDateTime->addMinutes($data['duration'] ?? 0)->format('Y-m-d H:i'),
+            'endDateTime' => $endDateTime->addMinutes($data['duration'] ?? 0)->format('Y-m-d H:i'),
             'duration' => $data['duration'],
             'invitees' => $data['invitees'],
         ];
-        if (isset($data['endDateTime'])) {
-            $endDateTime = new FrozenTime($data['endDateTime']);
-            $response['endDateTime'] = $endDateTime->format('Y-m-d H:i');
-        }
 
         return $response;
     }
