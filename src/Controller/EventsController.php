@@ -18,6 +18,19 @@ use Psy\Util\Json;
  */
 class EventsController extends AppController {
 
+    const FREQUENCY_OPERATION = [
+        'add' => [
+            'Once-Off' => 'addDays',
+            'Weekly' => 'addWeeks',
+            'Monthly' => 'addMonths',
+        ],
+        'diff' => [
+            'Once-Off' => 'diffInDays',
+            'Weekly' => 'diffInWeeks',
+            'Monthly' => 'diffInMonths',
+        ],
+    ];
+
     const VALID_FREQUENCY = ['Once-Off', "Weekly", "Monthly"];
 
 
