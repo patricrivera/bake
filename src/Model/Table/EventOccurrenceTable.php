@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Model\Table;
 
+use App\Model\Entity\EventOccurrence;
+use Cake\I18n\FrozenTime;
 use Cake\ORM\Query;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
@@ -29,6 +31,19 @@ use Cake\Validation\Validator;
  */
 class EventOccurrenceTable extends Table
 {
+    const FREQUENCY_OPERATION = [
+        'add' => [
+            'Once-Off' => 'addDays',
+            'Weekly' => 'addWeeks',
+            'Monthly' => 'addMonths',
+        ],
+        'diff' => [
+            'Once-Off' => 'diffInDays',
+            'Weekly' => 'diffInWeeks',
+            'Monthly' => 'diffInMonths',
+        ],
+    ];
+
     /**
      * Initialize method
      *
@@ -94,5 +109,113 @@ class EventOccurrenceTable extends Table
         $rules->add($rules->existsIn(['event_id'], 'Events'), ['errorField' => 'event_id']);
 
         return $rules;
+    }
+
+    /**
+     * @param $id
+     * @return int
+     */
+    public function purgeByEventId($id)
+    {
+        return $this->deleteAll(['event_id' => $id]);
+    }
+
+    /**
+     * @param $startDate
+     * @param $endDate
+     * @param array $invitees
+     * @return array
+     */
+    public function findAllBy($startDate, $endDate, $invitees = []) {
+        $query = $this->find('all');
+        $query->contain(['Events', 'EventAttendees']);
+
+        if ($startDate) {
+            $query->where(['EventOccurrence.startDateTime >=' => $startDate]);
+        }
+
+        if ($endDate) {
+            $query->where(['EventOccurrence.endDateTime <=' => $endDate]);
+        }
+
+        // Set the logic for filtering attendees
+        if (count($invitees)) {
+            $query->innerJoinWith('EventAttendees', function (Query $q) use ($invitees) {
+                return $q->where(['EventAttendees.attendee_id IN' => $invitees]);
+            });
+        }
+
+        // Sort the event by startDateTime
+        $query->orderAsc('EventOccurrence.startDateTime');
+        $query->distinct('EventOccurrence.id');
+
+        $result = $query->all();
+        $events = [];
+        $inviteeIds = [];
+        /* @var $event EventOccurrence */
+        foreach ($result as $occurrence) {
+            $attendees = $occurrence->event_attendees;
+            if ($attendees && !isset($inviteeIds[$occurrence->event->id])) {
+                $inviteeIds[$occurrence->event->id] = [];
+                foreach ($attendees as $attendee) {
+                    $inviteeIds[$occurrence->event->id][] = $attendee->attendee_id;
+                }
+            }
+
+            $events['items'][] = [
+                'event_id' => $occurrence->event->id,
+                'eventName' => $occurrence->event->eventName,
+                'startDateTime' => $occurrence->startDateTime->toDateTimeString(),
+                'endDateTime' => $occurrence->endDateTime->toDateTimeString(),
+                'invitees' => $inviteeIds[$occurrence->event->id],
+            ];
+        }
+
+        return $events;
+    }
+
+    /**
+     * @param $data
+     * @param $eventEntity
+     * @throws \Exception
+     */
+    public function saveEvent($data, $eventEntity) {
+        $duration = $data['duration'] ?? 0;
+        $frequency = $data['frequency'];
+        $startDateTime = $data['startDateTime'];
+        $endDateTime = $data['endDateTime'];
+
+        $eventOccurenceEntities = [];
+        $occurrenceDiff = $startDateTime->{self::FREQUENCY_OPERATION['diff'][$frequency]}($endDateTime);
+        for ($occurrence = 0; $occurrence <= $occurrenceDiff; $occurrence++) {
+            $currentOccurrence = $startDateTime->{self::FREQUENCY_OPERATION['add'][$frequency]}($occurrence);
+            $conflict = $this->hasConflictingSchedule($currentOccurrence, $currentOccurrence->addMinute($duration));
+            if($conflict && $conflict->event->id !== $eventEntity->get('id')) {
+                $eventName = $conflict->event->eventName;
+                $timeSlot = "$conflict->startDateTime to $conflict->endDateTime";
+                throw new \Exception("conflicting schedule with $eventName at $timeSlot");
+            }
+            $eventOccurenceEntities[] = $this->newEmptyEntity()
+                ->set('event', $eventEntity)
+                ->set('duration', $duration)
+                ->set('startDateTime', $currentOccurrence)
+                ->set('endDateTime', $currentOccurrence->addMinute($duration));
+        }
+        $this->saveManyOrFail($eventOccurenceEntities);
+    }
+
+    /**
+     * @param FrozenTime $start
+     * @param FrozenTime $end
+     * @return array|\Cake\Datasource\EntityInterface|null
+     */
+    public function hasConflictingSchedule(FrozenTime $start, FrozenTime $end) {
+        $query = $this->find('all');
+        $query->contain(['Events']);
+        $query->where(['(startDateTime BETWEEN :start AND :end) OR (endDateTime BETWEEN :start AND :end)'])
+            ->bind(':start', $start->toDateTimeString(), 'date')
+            ->bind(':end', $end->toDateTimeString(), 'date');
+
+        return $query->first();
     }
 }

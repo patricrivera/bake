@@ -83,4 +83,33 @@ class EventFrequencyTable extends Table
 
         return $rules;
     }
+
+    /**
+     * @param $id
+     * @return int
+     */
+    public function purgeByEventId($id)
+    {
+        return $this->deleteAll(['event_id' => $id]);
+    }
+
+    /**
+     * @param $data
+     * @param $eventEntity
+     * @throws \Exception
+     */
+    public function saveEvent($data, $eventEntity) {
+        $frequencyEntity = $this->Frequency->find('all', [
+            'conditions' => ['name' => $data['frequency']]
+        ])->first();
+        if (!$frequencyEntity) {
+            throw new \Exception("Invalid Frequency");
+        }
+
+        // Save Event Frequency Table
+        $eventFrequencyEntity = $this->newEmptyEntity();
+        $eventFrequencyEntity->set('event', $eventEntity);
+        $eventFrequencyEntity->set('frequency', $frequencyEntity);
+        $this->saveOrFail($eventFrequencyEntity);
+    }
 }

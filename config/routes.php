@@ -59,11 +59,16 @@ $routes->scope('/', function (RouteBuilder $builder) {
 
     $builder->connect('/api-docs', ['controller' => 'Swagger', 'action' => 'index', 'plugin' => 'SwaggerBake']);
     $builder->resources('Events', [
-        'only' => ['add', 'view'],
+        'only' => ['add', 'view', 'edit'],
         'map' => [
             'add' => [
                 'action' => 'add',
                 'method' => 'POST',
+                'path' => '/'
+            ],
+            'edit' => [
+                'action' => 'edit',
+                'method' => ['PATCH', 'PUT'],
                 'path' => '/'
             ],
             'view' => [
