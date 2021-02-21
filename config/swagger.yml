@@ -23,7 +23,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EventsResponse'
+                $ref: '#/components/schemas/EventsItem'
     put:
       tags:
         - Events
