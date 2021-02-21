@@ -5,6 +5,7 @@ namespace App\Controller;
 
 use App\Model\Entity\Event;
 use App\Model\Entity\EventOccurrence;
+use Cake\Datasource\ConnectionManager;
 use Cake\Datasource\EntityInterface;
 use Cake\Datasource\Exception\RecordNotFoundException;
 use Cake\Datasource\ResultSetInterface;
@@ -123,6 +124,8 @@ class EventsController extends AppController {
      * @throws \Exception
      */
     public function add() {
+        $connection = ConnectionManager::get('default');
+        $connection->begin();
         $eventEntity = $this->Events->newEmptyEntity();
         try {
             if ($this->request->is('post')) {
@@ -152,16 +155,19 @@ class EventsController extends AppController {
                 if (isset($data['endDateTime'])) {
                     $response['endDateTime'] = $data['endDateTime'];
                 }
+                $connection->commit();
 
                 $this->set([
                     'event' => $response,
                 ]);
             }
-        } catch (\Throwable $exception) {
+        }
+        catch (\Throwable $exception) {
             $message = $exception->getMessage();
             $this->set([
                 'event' => ['status' => 'error', 'message' => $message],
             ]);
+            $connection->rollback();
         }
         $this->viewBuilder()->setOption('serialize', 'event');
     }
@@ -203,7 +209,7 @@ class EventsController extends AppController {
         }
 
         // Validate if existing frequency
-        if(!in_array($data['frequency'], self::VALID_FREQUENCY)) {
+        if (!in_array($data['frequency'], self::VALID_FREQUENCY)) {
             throw new \Exception("Invalid frequency.");
         }
 
