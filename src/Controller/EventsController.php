@@ -47,7 +47,7 @@ class EventsController extends AppController {
             }
 
             if (isset($data['end'])) {
-                $query->where(['EventOccurrence.endDateTime >=' => new \DateTime($data['end'])]);
+                $query->where(['EventOccurrence.endDateTime <=' => new \DateTime($data['end'])]);
             }
 
             // Set the logic for filtering attendees
@@ -121,6 +121,8 @@ class EventsController extends AppController {
                     }
                 });
                 $startDateTime = new FrozenTime($data['startDateTime']);
+
+                // TODO <Patric> - Should I change the response body when there are multiple event occurrence (monthly, weekly)
                 $response = [
                     'id' => $events['id'],
                     'eventName' => $events['eventName'],
@@ -192,7 +194,6 @@ class EventsController extends AppController {
             }
         }
         $startDateTime = new FrozenTime($data['startDateTime'] ?? "");
-        $endDateTime = new FrozenTime($data['endDateTime'] ?? $data['startDateTime'] ?? "");
         $eventOccurenceEntities = [];
         switch ($data['frequency']) {
             case "Once-Off":
@@ -204,31 +205,31 @@ class EventsController extends AppController {
                     ->set('endDateTime', $startDateTime->addMinute($duration));
                 break;
             case "Weekly":
-                $currentWeek = $startDateTime;
+                $endDateTime = new FrozenTime($data['endDateTime'] ?? $startDateTime->addWeeks(10));
                 for ($occurence = 0;
                      $occurence <= $startDateTime->diffInWeeks($endDateTime);
                      $occurence++) {
+                    $currentWeek = $startDateTime->addWeeks($occurence);
                     $this->validateConflictingSchedule($currentWeek, $currentWeek->addMinute($duration));
                     $eventOccurenceEntities[] = $eventOccurrenceTable->newEmptyEntity()
                         ->set('event', $eventEntity)
                         ->set('duration', $duration)
                         ->set('startDateTime', $currentWeek)
                         ->set('endDateTime', $currentWeek->addMinute($duration));
-                    $currentWeek = $currentWeek->addWeek(1);
                 }
                 break;
             case "Monthly":
-                $currentMonth = $startDateTime;
+                $endDateTime = new FrozenTime($data['endDateTime'] ?? $startDateTime->addMonths(10));
                 for ($occurence = 0;
                      $occurence <= $startDateTime->diffInMonths($endDateTime);
                      $occurence++) {
+                    $currentMonth = $startDateTime->addMonth($occurence);
                     $this->validateConflictingSchedule($currentMonth, $currentMonth->addMinute($duration));
                     $eventOccurenceEntities[] = $eventOccurrenceTable->newEmptyEntity()
                         ->set('event', $eventEntity)
                         ->set('duration', $duration)
                         ->set('startDateTime', $currentMonth)
                         ->set('endDateTime', $currentMonth->addMinute($duration));
-                    $currentMonth = $currentMonth->addMonth(1);
                 }
                 break;
         }
