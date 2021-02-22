@@ -144,6 +144,9 @@ class EventOccurrenceTable extends Table
                 return $q->where(['EventAttendees.attendee_id IN' => $invitees]);
             });
         }
+        else {
+            $query->innerJoinWith('EventAttendees');
+        }
 
         // Sort the event by startDateTime
         $query->orderAsc('EventOccurrence.startDateTime');
