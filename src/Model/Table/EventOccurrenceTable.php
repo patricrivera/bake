@@ -121,14 +121,14 @@ class EventOccurrenceTable extends Table
     }
 
     /**
-     * @param $startDate
-     * @param $endDate
+     * @param \DateTime|bool $startDate
+     * @param \DateTime|bool $endDate
      * @param array $invitees
      * @return array
      */
     public function findAllBy($startDate, $endDate, $invitees = []) {
         $query = $this->find('all');
-        $query->contain(['Events', 'EventAttendees']);
+        $query->contain(['Events' => ['EventAttendees']]);
 
         if ($startDate) {
             $query->where(['EventOccurrence.startDateTime >=' => $startDate]);
@@ -140,12 +140,9 @@ class EventOccurrenceTable extends Table
 
         // Set the logic for filtering attendees
         if (count($invitees)) {
-            $query->innerJoinWith('EventAttendees', function (Query $q) use ($invitees) {
+            $query->innerJoinWith('Events.EventAttendees', function (Query $q) use ($invitees) {
                 return $q->where(['EventAttendees.attendee_id IN' => $invitees]);
             });
-        }
-        else {
-            $query->innerJoinWith('EventAttendees');
         }
 
         // Sort the event by startDateTime
@@ -154,14 +151,14 @@ class EventOccurrenceTable extends Table
 
         $result = $query->all();
         $events = [];
-        $inviteeIds = [];
+
         /* @var $event EventOccurrence */
         foreach ($result as $occurrence) {
-            $attendees = $occurrence->event_attendees;
-            if ($attendees && !isset($inviteeIds[$occurrence->event->id])) {
-                $inviteeIds[$occurrence->event->id] = [];
+            $inviteeIds = [];
+            $attendees = $occurrence->event->event_attendees;
+            if ($attendees) {
                 foreach ($attendees as $attendee) {
-                    $inviteeIds[$occurrence->event->id][] = $attendee->attendee_id;
+                    $inviteeIds[] = $attendee->attendee_id;
                 }
             }
 
@@ -170,7 +167,7 @@ class EventOccurrenceTable extends Table
                 'eventName' => $occurrence->event->eventName,
                 'startDateTime' => $occurrence->startDateTime->toDateTimeString(),
                 'endDateTime' => $occurrence->endDateTime->toDateTimeString(),
-                'invitees' => $inviteeIds[$occurrence->event->id],
+                'invitees' => $inviteeIds,
             ];
         }
 
