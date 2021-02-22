@@ -153,6 +153,16 @@ class EventsController extends AppController {
      */
     private function prepareData(&$data) {
         $frequencyName = $data['frequency'];
+        // Validate if the frequency field is missing
+        if (!isset($data['frequency'])) {
+            throw new \Exception("frequency field missing.");
+        }
+
+        // Validate if existing frequency
+        if (!in_array($data['frequency'], self::VALID_FREQUENCY)) {
+            throw new \Exception("Invalid frequency.");
+        }
+
         $data['startDateTime'] = new FrozenTime($data['startDateTime'] ?? "");
         if ($frequencyName == "Once-Off") {
             $data['endDateTime'] = $data['startDateTime'];
@@ -165,16 +175,6 @@ class EventsController extends AppController {
         // Validate if the endDateTime is less than the startDateTime
         if ($data['endDateTime'] < $data['startDateTime']) {
             throw new \Exception('endDateTime should be ahead of startDateTime.');
-        }
-
-        // Validate if the frequency field is missing
-        if (!isset($data['frequency'])) {
-            throw new \Exception("frequency field missing.");
-        }
-
-        // Validate if existing frequency
-        if (!in_array($data['frequency'], self::VALID_FREQUENCY)) {
-            throw new \Exception("Invalid frequency.");
         }
 
         // Validate if the duration is non negative value
